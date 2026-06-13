@@ -1,0 +1,84 @@
+CREATE MATERIALIZED VIEW MV_BENEFICIARIOS_COMPLETO AS
+-- Dados históricos
+SELECT
+    EXTRACT(YEAR FROM bol.HBOL_ANO_CONCESSAO) AS ANO,
+    ben.HBEN_ID AS BEN_ID,
+    ben.HBEN_CPF AS BEN_CPF,
+    ben.HBEN_DT_NASCIMENTO AS BEN_DT_NASCIMENTO,
+    ben.HBEN_DEFICIENTE_FISICO AS BEN_DEFICIENTE_FISICO,
+    sex.HSEX_SIGLA AS SEXO,
+    rac.HRAC_RACA AS RACA_ETNIA,
+    loc.HLOC_MUNICIPIO AS MUNICIPIO,
+    est.HEST_SIGLA AS UF,
+    reg.HREG_NOME AS REGIAO,
+    ies.HIES_NOME AS INSTITUICAO,
+    ies.HIES_CODIGO_EMEC,
+    cur.HCRS_NOME AS CURSO,
+    tur.HTUR_TURNO AS TURNO,
+    tip.HTIP_TIPO AS TIPO_BOLSA,
+    mod.HMOD_MODALIDADE AS MODALIDADE,
+    FLOOR(MONTHS_BETWEEN(SYSDATE, ben.HBEN_DT_NASCIMENTO)/12) AS IDADE_ATUAL,
+    CASE 
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.HBEN_DT_NASCIMENTO)/12) < 18 THEN 'Menor de 18'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.HBEN_DT_NASCIMENTO)/12) BETWEEN 18 AND 24 THEN '18-24'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.HBEN_DT_NASCIMENTO)/12) BETWEEN 25 AND 34 THEN '25-34'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.HBEN_DT_NASCIMENTO)/12) BETWEEN 35 AND 44 THEN '35-44'
+        ELSE '45+'
+    END AS FAIXA_ETARIA
+FROM 
+    hbeneficiarios ben
+    INNER JOIN hmatriculas mat ON mat.hmat_ben_id = ben.hben_id
+    INNER JOIN hbolsas bol ON bol.hbol_id = mat.hmat_bol_id
+    LEFT JOIN hcursos cur ON cur.hcrs_id = mat.hmat_crs_id
+    LEFT JOIN hturnos tur ON tur.htur_id = cur.hcrs_tur_id
+    LEFT JOIN hinstituicoes ies ON ies.hies_id = mat.hmat_ies_id
+    LEFT JOIN hlocalizacoes loc ON loc.hloc_id = ben.hben__loc_id
+    LEFT JOIN hestados est ON est.hest_id = loc.hloc_est_id
+    LEFT JOIN hregiao reg ON reg.hreg_id = est.hest_reg_id
+    LEFT JOIN hsexos sex ON sex.hsex_id = ben.hben_sex_id
+    LEFT JOIN hracas rac ON rac.hrac_id = ben.hben_rac_id
+    LEFT JOIN htipo tip ON tip.htip_id = bol.hbol_tip_id
+    LEFT JOIN hmodalidades mod ON mod.hmod_id = bol.hbol_mod_id
+
+UNION ALL
+
+-- Dados de 2020
+SELECT
+    EXTRACT(YEAR FROM bol.bol_ano_concessao) AS ANO,
+    ben.ben_id,
+    ben.ben_cpf,
+    ben.ben_dt_nascimento,
+    ben.ben_deficiente_fisico,
+    sex.sex_sigla AS SEXO,
+    rac.rac_raca AS RACA_ETNIA,
+    loc.loc_municipio AS MUNICIPIO,
+    est.est_sigla AS UF,
+    reg.reg_nome AS REGIAO,
+    ies.ies_nome AS INSTITUICAO,
+    ies.ies_codigo_emec,
+    cur.crs_nome AS CURSO,
+    tur.tur_turno AS TURNO,
+    tip.tip_tipo AS TIPO_BOLSA,
+    mod.mod_modalidade AS MODALIDADE,
+    FLOOR(MONTHS_BETWEEN(SYSDATE, ben.ben_dt_nascimento)/12) AS IDADE_ATUAL,
+    CASE 
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.ben_dt_nascimento)/12) < 18 THEN 'Menor de 18'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.ben_dt_nascimento)/12) BETWEEN 18 AND 24 THEN '18-24'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.ben_dt_nascimento)/12) BETWEEN 25 AND 34 THEN '25-34'
+        WHEN FLOOR(MONTHS_BETWEEN(SYSDATE, ben.ben_dt_nascimento)/12) BETWEEN 35 AND 44 THEN '35-44'
+        ELSE '45+'
+    END AS FAIXA_ETARIA
+FROM 
+    beneficiarios ben
+    INNER JOIN matriculas mat ON mat.mat_ben_id = ben.ben_id
+    INNER JOIN bolsas bol ON bol.bol_id = mat.mat_bol_id
+    LEFT JOIN cursos cur ON cur.crs_id = mat.mat_crs_id
+    LEFT JOIN turnos tur ON tur.tur_id = cur.crs_tur_id
+    LEFT JOIN instituicoes ies ON ies.ies_id = mat.mat_ies_id
+    LEFT JOIN localizacoes loc ON loc.loc_id = ben.ben__loc_id
+    LEFT JOIN estados est ON est.est_id = loc.loc_est_id
+    LEFT JOIN regiao reg ON reg.reg_id = est.est_reg_id
+    LEFT JOIN sexos sex ON sex.sex_id = ben.ben_sex_id
+    LEFT JOIN racas rac ON rac.rac_id = ben.ben_rac_id
+    LEFT JOIN tipo tip ON tip.tip_id = bol.bol_tip_id
+    LEFT JOIN modalidades mod ON mod.mod_id = bol.bol_mod_id;
